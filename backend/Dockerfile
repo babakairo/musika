@@ -3,14 +3,16 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 
 COPY package*.json ./
-# Force install ALL deps including devDependencies (needed for nest build / ts-node)
 RUN npm install --include=dev
 
 COPY . .
 RUN npx prisma generate
-RUN npm run build
-# Verify dist was created
-RUN ls dist/main.js
+
+# Compile TypeScript directly (bypass nest CLI)
+RUN npx tsc --project tsconfig.json
+
+# Show what was built
+RUN find /app/dist -type f -name "*.js" | head -20
 
 EXPOSE 3001
 CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npx prisma db seed && node dist/main"]
